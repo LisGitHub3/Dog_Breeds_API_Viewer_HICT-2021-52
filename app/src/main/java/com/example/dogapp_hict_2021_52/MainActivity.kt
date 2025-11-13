@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -48,111 +50,144 @@ fun DogScreen(viewModel: DogViewModel) {
 
     Scaffold(
         topBar = {
-            Column {
-                TopAppBar(
-                    title = {
-                        Text(
-                            text = "DogTalker",
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth(),
-                            color = Color.White
-                        )
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = Color(0xFFF55D37)
+            TopAppBar(
+                title = {
+                    Text(
+                        text = "DogTalker",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth(),
+                        color = Color.White
                     )
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color(0xFFF55D37)
                 )
-
-                OutlinedTextField(
-                    value = searchText,
-                    onValueChange = { searchText = it },
-                    placeholder = { Text("Search Dogs..") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp)
-                )
-            }
+            )
         },
-        containerColor = Color(0xFFFDD5C6)
+        containerColor = Color(0xFFF8D6CA)
     ) { padding ->
-        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
-            when (state) {
-                is UiState.Loading -> {
-                    Box(
-                        Modifier
-                            .fillMaxSize()
-                            .background(Color(0x66000000)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator()
-                    }
-                }
-                is UiState.Success -> {
-                    val images = (state as UiState.Success).images
-                    val status = (state as UiState.Success).status
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
 
-                    // Filter images by searchText (real-time)
-                    val filteredImages = if (searchText.isEmpty()) images
-                    else images.filter { it.contains(searchText, ignoreCase = true) }
+            OutlinedTextField(
+                value = searchText,
+                onValueChange = { searchText = it },
+                placeholder = { Text("Search Dogs...") },
+                singleLine = true,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp)
+            )
 
-                    LazyColumn(
-                        contentPadding = PaddingValues(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        item {
-                            Text(
-                                text = "Status: $status",
-                                style = MaterialTheme.typography.bodyMedium,
-                                modifier = Modifier.padding(8.dp)
-                            )
+
+            Box(modifier = Modifier.fillMaxSize()) {
+                when (state) {
+                    is UiState.Loading -> {
+                        Box(
+                            Modifier
+                                .fillMaxSize()
+                                .background(Color(0x66000000)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator()
                         }
+                    }
 
-                        items(filteredImages) { url ->
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(220.dp)
-                                    .clickable { fullScreenImage = url },
-                                shape = RoundedCornerShape(12.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color.White),
-                                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
-                            ) {
-                                AsyncImage(
-                                    model = url,
-                                    contentDescription = null,
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier.fillMaxSize()
+                    is UiState.Success -> {
+                        val images = (state as UiState.Success).images
+                        val status = (state as UiState.Success).status
+
+                        // Filter images according to search text
+                        val filteredImages = if (searchText.isEmpty()) images
+                        else images.filter { it.contains(searchText, ignoreCase = true) }
+
+                        LazyColumn(
+                            contentPadding = PaddingValues(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            item {
+                                Text(
+                                    text = "Status: $status",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    modifier = Modifier.padding(8.dp)
                                 )
+                            }
+
+                            items(filteredImages) { url ->
+                                Card(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(220.dp)
+                                        .clickable { fullScreenImage = url },
+                                    shape = RoundedCornerShape(12.dp),
+                                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                                ) {
+                                    AsyncImage(
+                                        model = url,
+                                        contentDescription = null,
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier.fillMaxSize()
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    is UiState.Error -> {
+                        val msg = (state as UiState.Error).message
+                        Column(
+                            modifier = Modifier.fillMaxSize(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Text("Error: $msg")
+                            Spacer(Modifier.height(16.dp))
+                            Button(onClick = { viewModel.fetchDogs() }) {
+                                Text("Retry")
                             }
                         }
                     }
                 }
-                is UiState.Error -> {
-                    val msg = (state as UiState.Error).message
-                    Column(
-                        modifier = Modifier.fillMaxSize(),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Text("Error: $msg")
-                        Spacer(Modifier.height(16.dp))
-                        Button(onClick = { viewModel.fetchDogs() }) {
-                            Text("Retry")
+
+
+                fullScreenImage?.let { url ->
+                    Dialog(onDismissRequest = { fullScreenImage = null }) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color.Black)
+                        ) {
+                            AsyncImage(
+                                model = url,
+                                contentDescription = null,
+                                contentScale = ContentScale.Fit,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .align(Alignment.Center)
+                            )
+
+                            IconButton(
+                                onClick = { fullScreenImage = null },
+                                modifier = Modifier
+                                    .align(Alignment.TopStart)
+                                    .padding(16.dp)
+                                    .size(40.dp)
+                                    .background(Color(0x66000000), shape = RoundedCornerShape(50))
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.ArrowBack,
+                                    contentDescription = "Back",
+                                    tint = Color.White
+                                )
+                            }
                         }
                     }
-                }
-            }
-
-            fullScreenImage?.let { url ->
-                Dialog(onDismissRequest = { fullScreenImage = null }) {
-                    AsyncImage(
-                        model = url,
-                        contentDescription = null,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Fit
-                    )
                 }
             }
         }
